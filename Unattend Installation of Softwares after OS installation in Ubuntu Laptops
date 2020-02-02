@@ -1,0 +1,54 @@
+---
+- name: Update and installation of Softwares after Ubuntu OS installation.
+  hosts: ubuntu_laptop
+  become: true
+
+  tasks:
+    - name: Update all packages to the latest version
+      apt:
+        upgrade: dist
+      ignore_errors: true
+      register: apt_det_update
+    - debug:
+        msg: "All Packages are updated successfully{{ apt_det_update.stderr }}"
+
+     - name: Install VPN and Other  Packages
+      apt:
+        name:  ['net-tools','network-manager-l2tp',' network-manager-l2tp-gnome','libreswan','curl','wget','filezilla']
+        state:  latest
+      register: pck_output
+      ignore_errors: true
+    - name: Success Message
+      debug:
+        msg: "VPN and Other Packages are successfully installed"
+
+    - name: Add system to the Jump Cloud
+      shell:  "curl --tlsv1.2 --silent --show-error --header 'x-connect-key: 96f68fc7e196a9d985a70e40901bd72496935ec9' https://kickstart.jumpcloud.com/Kickstart | sudo bash"
+      register: jump_output
+      ignore_errors: true
+    - name:
+      debug:
+        msg: "Successfully Integrated the Laptop With Jumpcloud"
+
+    - name: Install Zoom,Chrome and Forticlient
+      apt:
+        deb: "{{ item }}"
+      with_items:
+        - https://zoom.us/client/latest/zoom_amd64.deb
+        - https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        - https://forticlient-linux.s3.ap-south-1.amazonaws.com/forticlient_6.2.2.0297_amd64.deb
+      register: pck_out2
+    - name: Output
+      debug:
+        msg: "Zoom,Chrome and Forticlient Package's are  Downloaded and Installed suucessfully"
+
+    - name: Download Slack
+      get_url:
+        url: https://downloads.slack-edge.com/linux_releases/slack-desktop-4.2.0-amd64.deb
+        dest: /home/zaloni-it/
+
+    - name: Reboot the Laptop after all task
+      shell: sleep 2 && reboot
+      async: 2
+      poll: 0
+
